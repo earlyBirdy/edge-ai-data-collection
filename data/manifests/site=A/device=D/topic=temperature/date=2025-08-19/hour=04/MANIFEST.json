@@ -1,0 +1,23 @@
+{
+  "created_utc": "2025-08-19T04:19:01.549395+00:00",
+  "partition": {
+    "site": "A",
+    "device": "D",
+    "topic": "temperature",
+    "date": "2025-08-19",
+    "hour": "04"
+  },
+  "files": [
+    {
+      "path": "data/samples/hot/temperature/2025-08-19/temperature-2025-08-19T04-00.jsonl",
+      "sha256": "fad6d6640a0c313e63bdf10e5cd3d7edf63547433eadebc6166fa6373a62d441",
+      "size": 224
+    }
+  ],
+  "merkle_root": "fad6d6640a0c313e63bdf10e5cd3d7edf63547433eadebc6166fa6373a62d441",
+  "schema": {
+    "json_schema": "schema/temperature.schema.json",
+    "avro": "schema/temperature.avsc",
+    "proto": "proto/temperature.proto"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "type": "record",
+  "name": "TemperatureReading",
+  "namespace": "edgeai",
+  "fields": [
+    {
+      "name": "device_id",
+      "type": "string"
+    },
+    {
+      "name": "site",
+      "type": "string"
+    },
+    {
+      "name": "ts",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    },
+    {
+      "name": "celsius",
+      "type": "double"
+    },
+    {
+      "name": "status",
+      "type": [
+        "null",
+        {
+          "type": "enum",
+          "name": "Status",
+          "symbols": [
+            "OK",
+            "WARN",
+            "ALERT"
+          ]
+        }
+      ],
+      "default": null
+    }
+  ]
+}

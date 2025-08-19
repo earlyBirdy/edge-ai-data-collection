@@ -1,0 +1,19 @@
+# Basic configuration for edge data collection
+mqtt:
+  host: "localhost"
+  port: 1883
+  username: null
+  password: null
+  tls: false
+  topics:
+    - "factory/sensor/event"
+
+storage:
+  hot_dir: "data/hot"
+  batches_dir: "data/batches"
+  file_prefix: "telemetry"
+  rotation: "daily"   # UTC rotation of JSONL files
+
+batch:
+  frequency: "hourly" # hourly | daily | manual
+  timezone: "UTC"

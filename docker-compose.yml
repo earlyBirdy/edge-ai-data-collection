@@ -1,0 +1,24 @@
+version: "3.8"
+services:
+  edge-data:
+    build: .
+    volumes:
+      - ./data:/app/data
+    environment:
+      - EDGE_SITE=A
+      - EDGE_DEVICE=D
+    command: python -c "print('Edge AI Data container up');"
+
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./:/work
+    environment:
+      - PYTHONUNBUFFERED=1
+    command: >
+      jupyter lab --ip=0.0.0.0 --port=8888 --no-browser
+      --NotebookApp.token= --NotebookApp.password=

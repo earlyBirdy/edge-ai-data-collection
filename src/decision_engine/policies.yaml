@@ -1,0 +1,19 @@
+global:
+  default_action: "NONE"
+  thresholds:
+    temperature:
+      warn: 75
+      alert: 85
+    vibration:
+      warn: 0.12
+      alert: 0.2
+
+assets:
+  lineA-press01:
+    thresholds:
+      temperature:
+        warn: 72
+        alert: 82
+    actions:
+      alert: ["notify:maintenance", "create_ticket"]
+      shutdown: ["notify:safety", "trigger:plc_shutdown"]

@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*$py.class
+.venv/
+.env
+
+# OS
+.DS_Store
+
+# Data
+data/hot/*
+data/batches/*
+!data/.keep
+
+# Logs
+logs/
+*.log

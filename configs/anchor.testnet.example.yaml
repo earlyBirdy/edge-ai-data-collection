@@ -1,0 +1,8 @@
+# Example config for Bitcoin anchoring (testnet)
+network: testnet
+def rpc_url: http://127.0.0.1:18332
+def rpc_user: change_me
+def rpc_pass: change_me
+wallet: default
+fee_satvB: 10
+manifest: data/manifests/site=A/device=D/topic=vision/date=2025-08-19/hour=11/MANIFEST.json

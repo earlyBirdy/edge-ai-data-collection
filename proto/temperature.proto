@@ -1,0 +1,10 @@
+syntax = "proto3";
+package edgeai;
+
+message TemperatureReading {
+  string device_id = 1;
+  string site = 2;
+  int64 ts_ms = 3;
+  double celsius = 4;
+  string status = 5; // OK|WARN|ALERT
+}

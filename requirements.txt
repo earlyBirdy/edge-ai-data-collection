@@ -1,0 +1,15 @@
+jsonschema>=4.21.0
+pandas>=2.2.0
+# Parquet engines (optional, choose one available in your environment)
+pyarrow>=15.0.0; platform_system != "Linux" or platform_machine != "aarch64"
+fastparquet>=2024.2.0
+fastavro>=1.9.0
+protobuf>=4.25.0
+duckdb>=1.0.0
+pillow>=10.3.0
+onnxruntime>=1.17.0
+opencv-python>=4.10.0
+
+requests>=2.32.0
+
+pyyaml>=6.0

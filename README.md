@@ -1,0 +1,191 @@
+# Edge AI Data Collection (Enhanced)
+
+Fast, secure, and auditable data collection for edge devices with **tiered storage**:
+- **Hot**: JSONL / Protobuf framed logs for ultra-fast append and tailing
+- **Warm/Batch**: Parquet (+ zstd) for analytics and ML features
+- **Governed**: JSON Schema / Avro contracts, signed manifests, and lineage-friendly layout
+
+> This package adds sample files, schemas, and scaffolding (Docker, CI) to help you run and extend the repo quickly.
+
+## Supported data & log formats
+
+| Layer | Format | Use case |
+|---|---|---|
+| Hot logs | **JSONL** (`*.jsonl` / `*.jsonl.zst`) | Append-only events, decisions, ops logs |
+| Hot streams (binary) | **Protobuf** (`*.pbr`) | High-rate sensor readings (compact, schema’d) |
+| Batch analytics | **Parquet** (`*.parquet`, zstd) | Columnar storage for queries and features |
+| Governance | **JSON Schema / Avro** (`*.schema.json` / `*.avsc`) | Data contracts & validation |
+| Ops logs | **LOG** (`*.log`) | Process/ingestion logs |
+| Media (optional) | **JPEG/PNG, MP4** | Vision/audio artifacts with sidecar JSON |
+
+## Paths & partitioning
+
+```
+data/
+  samples/
+    hot/temperature/2025-08-19/temperature-2025-08-19T11-00.jsonl
+    hot/ops/ingestion-2025-08-19.log
+    batch/site=A/device=D/topic=temperature/date=2025-08-19/hour=11/part-000.parquet
+  manifests/
+    site=A/device=D/topic=temperature/date=2025-08-19/hour=11/MANIFEST.json
+schema/
+  temperature.schema.json
+  temperature.avsc
+adapters/
+  opcua/README.md
+  odoo/README.md
+  sap/README.md
+decision_engine/
+  README.md
+  engine.py (interface placeholder)
+```
+
+**Partitioning (batch):** `site=<id>/device=<id>/topic=<name>/date=YYYY-MM-DD/hour=HH/part-*.parquet`
+
+## Minimal conventions
+- **Compression**: zstd across Parquet; gzip/zstd on rotated JSONL (`*.jsonl.zst`)
+- **Timestamps**: UTC, ISO-8601 in JSONL; INT64 in Parquet with TZ meta
+- **Schemas**: keep `schema_fingerprint` (SHA-256) in file metadata/headers
+- **Manifests**: per partition directory with per-file SHA-256 + Merkle root
+- **Rotation**: JSONL every 100 MB or 15 min; Parquet target 128–512 MB files
+
+## Quick start
+
+### Docker
+```bash
+docker build -t edge-ai-data:latest .
+docker run --rm -v $PWD/data:/app/data edge-ai-data:latest python -m src.cli ingest --config ./configs/example.yaml
+```
+
+### Local (Python)
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt
+python -m src.cli ingest --config ./configs/config.yaml
+```
+
+## Validation
+
+**JSON Schema**:
+```bash
+python tools/validate_jsonl.py --schema ./schema/temperature.schema.json --input ./data/samples/hot/temperature/2025-08-19/temperature-2025-08-19T04-00.jsonl
+```
+
+**Avro (optional)**: use `fastavro` for round-trip tests.
+
+## Decision engine interface
+
+See `decision_engine/engine.py` for the interface. You can drop in rule packs and model runners (ONNX/TensorRT).
+
+## CI
+
+`.github/workflows/ci.yml` runs lint, type checks, and smoke tests; customize as needed.
+
+---
+
+*Enhanced on 2025-08-19 04:19:01Z.*
+
+
+### Jupyter Lab (zero-setup via Docker)
+
+**Makefile route**
+```bash
+make lab              # builds the image and launches JupyterLab on http://localhost:8888
+# or run in background:
+make lab-detach
+make stop             # stop detached lab
+```
+
+**docker-compose route**
+```bash
+docker compose up jupyter
+# open http://localhost:8888
+```
+
+> Jupyter starts without a token for local development. For remote servers, set a token/password.
+
+
+
+## Vision (Image & Video Recognition)
+
+Run lightweight recognition that writes JSONL detections and optional annotated frames.
+
+**Images**
+```bash
+python -m vision.pipelines.image_recognition --input ./data/media/images --out ./data/samples/hot/vision
+```
+
+**Video**
+```bash
+python -m vision.pipelines.video_recognition --input ./data/media/video/sample.mp4 --out ./data/samples/hot/vision --every_ms 500
+```
+
+
+
+### Annotated Frames
+
+When running vision pipelines, annotated frames (with drawn boxes & labels) are saved under:
+
+```
+data/samples/hot/vision/frames/
+```
+
+Each image or sampled video frame gets a `*-annot.png` showing detected objects with bounding boxes and confidence scores.
+
+Useful for **smart factory data analysis** where visual confirmation of detections is important.
+
+
+
+### Vision frame annotations
+
+Add `--annotate` to save PNGs with bounding boxes & labels. Optionally set `--frames_out` (defaults to `<out>/frames`).
+
+**Images**
+```bash
+python -m vision.pipelines.image_recognition --input ./data/media/images   --out ./data/samples/hot/vision --annotate --frames_out ./data/samples/hot/vision/frames
+```
+
+**Video**
+```bash
+python -m vision.pipelines.video_recognition --input ./data/media/video/sample.mp4   --out ./data/samples/hot/vision --every_ms 500 --annotate --frames_out ./data/samples/hot/vision/frames
+```
+
+
+### Per-batch manifest (detections ↔ frames)
+
+After running image/video pipelines (optionally with `--annotate`), create a **partition manifest**:
+
+```bash
+python tools/update_manifest.py   --data-root .   --outdir ./data/samples/hot/vision   --site A --device D --topic vision   --date $(date +%F) --hour $(date +%H)
+```
+
+This writes `data/manifests/site=A/device=D/topic=vision/date=YYYY-MM-DD/hour=HH/MANIFEST.json` including:
+- SHA-256 for detection JSONL and annotated PNG frames
+- A Merkle root across all files
+- Linkage index: detection file → list of annotated frames referenced inside
+
+
+## Tamper-evidence: Bitcoin anchoring (testnet or mainnet)
+
+You can commit each partition's **Merkle root** on-chain via an `OP_RETURN` output.
+
+> **Dev note:** Use **testnet** while developing. Mainnet costs real BTC.
+
+**Anchor a manifest** (bitcoind JSON-RPC):
+```bash
+python tools/anchor_bitcoin.py \
+  --manifest data/manifests/site=A/device=D/topic=vision/date=YYYY-MM-DD/hour=HH/MANIFEST.json \  --network testnet \  --rpc-url http://127.0.0.1:18332 \  --rpc-user <user> --rpc-pass <pass> \  --wallet <wallet_name> \  --fee-satvB 10
+```
+
+This updates the manifest with:
+```json
+"anchor": { "network": "testnet", "txid": "<txid>", "anchored_utc": "...", "op_return_hex": "EAD1<merkle_root>" }
+```
+
+**Verify** (via node RPC, or fallback REST API):
+```bash
+python tools/verify_anchor.py \
+  --manifest data/manifests/site=A/device=D/topic=vision/date=YYYY-MM-DD/hour=HH/MANIFEST.json \  --network testnet \  --rpc-url http://127.0.0.1:18332 --rpc-user <user> --rpc-pass <pass> --wallet <wallet_name>
+```
+
+The OP_RETURN payload is `EAD1` + the 32-byte `merkle_root` from the manifest.

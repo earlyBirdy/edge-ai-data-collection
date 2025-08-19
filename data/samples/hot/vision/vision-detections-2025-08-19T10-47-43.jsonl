@@ -1,0 +1,3 @@
+{"annotated_frame": null, "ts": "2025-08-19T10:47:43.366013+00:00", "source": "image", "path": "data/media/images/img-001.png", "classes": [{"label": "object", "score": 0.13075980392156863, "bbox": [0.1, 0.1, 0.8, 0.8]}], "device_id": "D-123", "site": "A"}
+{"annotated_frame": null, "ts": "2025-08-19T10:47:43.416145+00:00", "source": "image", "path": "data/media/images/img-002.png", "classes": [{"label": "object", "score": 0.5049632352941177, "bbox": [0.1, 0.1, 0.8, 0.8]}], "device_id": "D-123", "site": "A"}
+{"annotated_frame": null, "ts": "2025-08-19T10:47:43.420386+00:00", "source": "image", "path": "data/media/images/img-003.png", "classes": [{"label": "object", "score": 0.8792892156862745, "bbox": [0.1, 0.1, 0.8, 0.8]}], "device_id": "D-123", "site": "A"}
