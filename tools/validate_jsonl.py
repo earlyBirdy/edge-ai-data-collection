@@ -3,9 +3,19 @@ import argparse
 import glob
 import json
 import sys
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import jsonschema
+
+
+def fill_templates(s: str) -> str:
+    """Fill {date_str} and {hour_str} using env or current UTC."""
+    now = datetime.now(timezone.utc)
+    date_str = os.environ.get("DATE_STR", now.strftime("%Y-%m-%d"))
+    hour_str = os.environ.get("HOUR_STR", now.strftime("%H"))
+    return s.replace("{date_str}", date_str).replace("{hour_str}", hour_str)
 
 
 def validate_file(schema, input_file):
@@ -27,9 +37,9 @@ def validate_file(schema, input_file):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Validate JSONL file(s) against JSON schema")
+    parser = argparse.ArgumentParser(description="Validate JSONL file(s) against JSON schema (glob + templates supported)")
     parser.add_argument("--schema", required=True, help="Path to schema JSON file")
-    parser.add_argument("--input", required=True, help="Path or glob to JSONL file(s)")
+    parser.add_argument("--input", required=True, help="Path, template, or glob to JSONL file(s)")
     args = parser.parse_args()
 
     schema_path = Path(args.schema)
@@ -39,9 +49,13 @@ def main():
     with open(schema_path, "r", encoding="utf-8") as f:
         schema = json.load(f)
 
-    files = glob.glob(args.input)
+    # NEW: fill {date_str} and {hour_str} from env (fallback to UTC now)
+    pattern = fill_templates(args.input)
+
+    # Support globs (including after templates are filled)
+    files = glob.glob(pattern)
     if not files:
-        sys.exit(f"No files matched pattern: {args.input}")
+        sys.exit(f"No files matched pattern: {args.input} -> {pattern}")
 
     all_errors = []
     for fpath in files:
