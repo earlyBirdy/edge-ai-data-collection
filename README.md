@@ -189,3 +189,48 @@ python tools/verify_anchor.py \
 ```
 
 The OP_RETURN payload is `EAD1` + the 32-byte `merkle_root` from the manifest.
+
+
+## Supported Example Machines
+
+This repository is designed to work with a wide range of **industrial edge computing devices** that collect, validate, and stream sensor data.  
+While the code is hardware-agnostic, the following classes of machines are good candidates for deployment:
+
+### 1. Industrial PCs (IPC) & Rugged Edge Computers
+- **Vendors**: Advantech, Aaeon, OnLogic, Sintrones, Vecow  
+- **Use cases**: factory automation, AI inference at the edge, SCADA/PLC integration  
+- **I/O support**: Ethernet, RS-232/485, CAN bus, GPIO, USB  
+
+### 2. Embedded ARM / SoC Boards
+- **Examples**: NVIDIA Jetson (Nano, Xavier, Orin), Raspberry Pi 5, BeagleBone, Orange Pi  
+- **Use cases**: lightweight AI/ML inference, temperature/vibration data logging, low-power deployments  
+- **I/O support**: CSI camera, SPI/I²C, GPIO, Wi-Fi/BT, LTE modules  
+
+### 3. Gateways & Protocol Bridges
+- **Examples**: Moxa UC series, HMS Anybus gateways, Siemens IoT2040  
+- **Use cases**: protocol translation (OPC UA, Modbus, MQTT, EtherCAT), legacy machine integration  
+- **I/O support**: Fieldbus, serial, Ethernet  
+
+### 4. Specialized AI Accelerators
+- **Examples**: Intel NUC + Movidius Myriad, Google Coral Dev Board, FPGA edge cards  
+- **Use cases**: real-time AI workloads, defect detection, predictive maintenance  
+
+---
+
+> ⚠️ **Note**:  
+This project assumes the target machine runs **Linux** (Ubuntu 20.04+ or Debian-based) with Python 3.9+.  
+Windows can be supported with minor path/glob adjustments.  
+
+---
+
+## How to Add Your Own Machine
+To integrate a new machine type:
+1. Configure the device’s **data acquisition drivers** (e.g., sensor SDK, OPC UA client).
+2. Point the data output to `data/samples/...` in JSONL format.  
+3. Validate using:
+   ```bash
+   python tools/validate_jsonl.py --schema ./schema/temperature.schema.json --input ./data/samples/hot/temperature/{date_str}/temperature-{date_str}T{hour_str}-00.jsonl
+   ```
+4. (Optional) Extend `adapters/` with your device-specific protocol handler.
+
+---
