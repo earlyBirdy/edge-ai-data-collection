@@ -7,11 +7,16 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-import jsonschema
+# Optional dependency: jsonschema
+try:
+    import jsonschema  # type: ignore
+    HAS_JSONSCHEMA = True
+except Exception:
+    HAS_JSONSCHEMA = False
 
 
 def fill_templates(s: str) -> str:
-    \"\"\"Fill {date_str} and {hour_str} placeholders from env or current UTC.\"\"\"
+    """Fill {date_str} and {hour_str} placeholders from env or current UTC."""
     now = datetime.now(timezone.utc)
     date_str = os.environ.get("DATE_STR", now.strftime("%Y-%m-%d"))
     hour_str = os.environ.get("HOUR_STR", now.strftime("%H"))
@@ -19,12 +24,12 @@ def fill_templates(s: str) -> str:
 
 
 def broaden_to_date_glob(filled_pattern: str) -> str:
-    \"\"\"
+    """
     If pattern points to a single hour file like
     .../YYYY-MM-DD/temperature-YYYY-MM-DDTHH-00.jsonl,
     broaden it to the date directory with filename wildcard:
     .../YYYY-MM-DD/temperature-*.jsonl
-    \"\"\"
+    """
     p = Path(filled_pattern)
     try:
         parent = p.parent
@@ -34,7 +39,7 @@ def broaden_to_date_glob(filled_pattern: str) -> str:
 
 
 def find_latest(files):
-    \"\"\"Pick the most recently modified file from a list (mtime).\"\"\"
+    """Pick the most recently modified file from a list (mtime)."""
     if not files:
         return []
     files = list({str(f) for f in files})
@@ -42,8 +47,52 @@ def find_latest(files):
     return [files[-1]]
 
 
+def is_iso8601(s: str) -> bool:
+    try:
+        if s.endswith("Z"):
+            datetime.fromisoformat(s.replace("Z", "+00:00"))
+        else:
+            datetime.fromisoformat(s)
+        return True
+    except Exception:
+        return False
+
+
+def validate_one_object(obj, schema):
+    """Lightweight validation if jsonschema is not available."""
+    errors = []
+
+    required = set(schema.get("required", []))
+    props = schema.get("properties", {})
+
+    # required keys
+    missing = required - set(obj.keys())
+    if missing:
+        errors.append(f"missing required fields: {sorted(missing)}")
+        return errors
+
+    # simple type checks for known keys
+    for key, spec in props.items():
+        if key not in obj:
+            continue
+        v = obj[key]
+        t = spec.get("type")
+        if t == "string" and not isinstance(v, str):
+            errors.append(f"{key} must be string")
+        elif t == "number" and not isinstance(v, (int, float)):
+            errors.append(f"{key} must be number")
+        # format date-time
+        if spec.get("format") == "date-time":
+            if not isinstance(v, str) or not is_iso8601(v):
+                errors.append(f"{key} must be ISO 8601 date-time")
+        # enum
+        if "enum" in spec and v not in spec["enum"]:
+            errors.append(f"{key} must be one of {spec['enum']}")
+    return errors
+
+
 def validate_file(schema, input_file):
-    \"\"\"Validate one JSONL file against schema; return list of error strings.\"\"\"
+    """Validate one JSONL file against schema; return list of error strings."""
     errors = []
     with open(input_file, "r", encoding="utf-8") as f:
         for i, line in enumerate(f, 1):
@@ -52,11 +101,16 @@ def validate_file(schema, input_file):
                 continue
             try:
                 obj = json.loads(line)
-                jsonschema.validate(instance=obj, schema=schema)
+                if HAS_JSONSCHEMA:
+                    jsonschema.validate(instance=obj, schema=schema)  # type: ignore
+                else:
+                    errs = validate_one_object(obj, schema)
+                    for e in errs:
+                        errors.append(f"{input_file} line {i}: {e}")
             except json.JSONDecodeError as e:
                 errors.append(f"{input_file} line {i}: invalid JSON ({e})")
-            except jsonschema.ValidationError as e:
-                errors.append(f"{input_file} line {i}: schema validation error ({e.message})")
+            except Exception as e:
+                errors.append(f"{input_file} line {i}: schema validation error ({e})")
     return errors
 
 
@@ -90,10 +144,13 @@ def main():
     # If still nothing and --latest, broaden one more level: parent of date directory
     if not files and args.latest:
         p = Path(filled)
-        wide_glob = str(p.parent.parent / "*/temperature-*.jsonl")
-        wide_matches = glob.glob(wide_glob)
-        if wide_matches:
-            files = find_latest(wide_matches)
+        try:
+            wide_glob = str(p.parent.parent / "*/temperature-*.jsonl")
+            wide_matches = glob.glob(wide_glob)
+            if wide_matches:
+                files = find_latest(wide_matches)
+        except Exception:
+            pass
 
     if not files:
         sys.exit(f"No files matched pattern: {args.input} -> {filled}"
