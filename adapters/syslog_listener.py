@@ -1,6 +1,15 @@
 import argparse
 import socketserver
 from datetime import datetime, timezone
+try:
+    from common.logger import get_logger
+except Exception:
+    import os, sys
+    sys.path.append(os.getcwd())
+    from common.logger import get_logger  # type: ignore
+
+logger = get_logger(__name__)
+
 
 try:
     from adapters.writer import write_jsonl
@@ -24,6 +33,7 @@ class SyslogUDPHandler(socketserver.BaseRequestHandler):
 
 
 def main():
+    logger.info('starting syslog_listener.py')
     ap = argparse.ArgumentParser(description="Syslog UDP server → JSONL")
     ap.add_argument("--host", default="0.0.0.0")
     ap.add_argument("--port", type=int, default=5140)  # non-privileged

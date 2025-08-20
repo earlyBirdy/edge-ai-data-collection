@@ -2,6 +2,15 @@ import argparse
 import sys
 from datetime import datetime, timezone
 try:
+    from common.logger import get_logger
+except Exception:
+    import os, sys
+    sys.path.append(os.getcwd())
+    from common.logger import get_logger  # type: ignore
+
+logger = get_logger(__name__)
+
+try:
     from scapy.all import sniff  # scapy
     HAS_SCAPY = True
 except Exception:
@@ -15,6 +24,7 @@ except Exception:
     from adapters.writer import write_jsonl  # type: ignore
 
 def main():
+    logger.info('starting pcap_reader.py')
     ap = argparse.ArgumentParser(description="PCAP live capture → JSONL")
     ap.add_argument("--iface", default=None, help="Interface (e.g., eth0). If omitted, scapy default.")
     ap.add_argument("--filter", default=None, help="BPF filter, e.g., 'tcp port 80'")

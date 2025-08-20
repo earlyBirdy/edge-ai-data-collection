@@ -2,6 +2,15 @@ from pathlib import Path
 import json
 import time
 from datetime import datetime, timezone
+try:
+    from common.logger import get_logger
+except Exception:
+    import os, sys
+    sys.path.append(os.getcwd())
+    from common.logger import get_logger  # type: ignore
+
+logger = get_logger(__name__)
+
 
 def write_jsonl(output_path, records_iter):
     out = Path(output_path)

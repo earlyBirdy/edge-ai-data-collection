@@ -2,6 +2,15 @@ import argparse
 import sys
 from datetime import datetime, timezone
 try:
+    from common.logger import get_logger
+except Exception:
+    import os, sys
+    sys.path.append(os.getcwd())
+    from common.logger import get_logger  # type: ignore
+
+logger = get_logger(__name__)
+
+try:
     from pymodbus.client import ModbusTcpClient  # pymodbus>=3
     HAS_MODBUS = True
 except Exception:
@@ -15,6 +24,7 @@ except Exception:
     from adapters.writer import write_jsonl  # type: ignore
 
 def main():
+    logger.info('starting modbus_reader.py')
     ap = argparse.ArgumentParser(description="Modbus TCP reader → JSONL")
     ap.add_argument("--host", required=True)
     ap.add_argument("--port", type=int, default=502)

@@ -3,6 +3,15 @@ import sys
 import asyncio
 from datetime import datetime, timezone
 try:
+    from common.logger import get_logger
+except Exception:
+    import os, sys
+    sys.path.append(os.getcwd())
+    from common.logger import get_logger  # type: ignore
+
+logger = get_logger(__name__)
+
+try:
     from asyncua import Client  # opcua async client
     HAS_OPCUA = True
 except Exception:
@@ -38,6 +47,7 @@ async def run(endpoint, node_ids, output, limit):
         await client.disconnect()
 
 def main():
+    logger.info('starting opcua_reader.py')
     ap = argparse.ArgumentParser(description="OPC UA reader → JSONL")
     ap.add_argument("--endpoint", required=True, help="opc.tcp://HOST:PORT")
     ap.add_argument("--nodes", nargs="+", required=True, help="Node IDs to read")

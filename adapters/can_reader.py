@@ -2,6 +2,15 @@ import argparse
 import sys
 from datetime import datetime, timezone
 try:
+    from common.logger import get_logger
+except Exception:
+    import os, sys
+    sys.path.append(os.getcwd())
+    from common.logger import get_logger  # type: ignore
+
+logger = get_logger(__name__)
+
+try:
     import can  # python-can
     HAS_CAN = True
 except Exception:
@@ -15,6 +24,7 @@ except Exception:
     from adapters.writer import write_jsonl  # type: ignore
 
 def main():
+    logger.info('starting can_reader.py')
     ap = argparse.ArgumentParser(description="CAN bus reader → JSONL")
     ap.add_argument("--channel", default="can0")
     ap.add_argument("--bustype", default="socketcan")  # linux

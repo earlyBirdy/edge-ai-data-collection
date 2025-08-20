@@ -3,6 +3,15 @@ import sys
 import json
 from datetime import datetime, timezone
 try:
+    from common.logger import get_logger
+except Exception:
+    import os, sys
+    sys.path.append(os.getcwd())
+    from common.logger import get_logger  # type: ignore
+
+logger = get_logger(__name__)
+
+try:
     import xmlrpc.client as xmlrpclib
     HAS_XMLRPC = True
 except Exception:
@@ -16,6 +25,7 @@ except Exception:
     from adapters.writer import write_jsonl  # type: ignore
 
 def main():
+    logger.info('starting erp_odoo_reader.py')
     ap = argparse.ArgumentParser(description="ERP (Odoo) reader → JSONL via XML-RPC")
     ap.add_argument("--url", required=True)
     ap.add_argument("--db", required=True)

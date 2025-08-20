@@ -4,6 +4,15 @@ import json
 from pathlib import Path
 from datetime import datetime, timezone
 try:
+    from common.logger import get_logger
+except Exception:
+    import os, sys
+    sys.path.append(os.getcwd())
+    from common.logger import get_logger  # type: ignore
+
+logger = get_logger(__name__)
+
+try:
     from adapters.writer import write_jsonl
 except Exception:
     # allow running as a script from repo root (PYTHONPATH not set)
@@ -12,6 +21,7 @@ except Exception:
     from adapters.writer import write_jsonl  # type: ignore
 
 def main():
+    logger.info('starting base_adapter.py')
     ap = argparse.ArgumentParser(description="Base adapter")
     ap.add_argument("--output", required=True, help="Output JSONL file")
     ap.add_argument("--limit", type=int, default=10, help="Max records to capture (0 = infinite)")

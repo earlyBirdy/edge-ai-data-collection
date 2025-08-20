@@ -1,41 +1,63 @@
 #!/usr/bin/env python3
 """
 Video Recognition Pipeline
-Extract frames from video at fixed intervals and save them as images.
+
+logger = get_logger(__name__)
+
+Extract frames from a video every N milliseconds and save them
+into a structured output directory.
 """
 
 import argparse
 import os
-import cv2
+import sys
+import time
+from pathlib import Path
+try:
+    from common.logger import get_logger
+except Exception:
+    import os, sys
+    sys.path.append(os.getcwd())
+    from common.logger import get_logger  # type: ignore
 
 
-def extract_frames(video_path: str, out_dir: str, every_ms: int = 1000) -> int:
-    """Extract frames every `every_ms` milliseconds from the video."""
-    if not os.path.exists(video_path):
-        raise FileNotFoundError(f"Video file not found: {video_path}")
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+
+
+def extract_frames(video_path: str, out_dir: str, every_ms: int = 1000):
+    if cv2 is None:
+        raise RuntimeError("OpenCV (cv2) is required. Install with `pip install opencv-python`")
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise RuntimeError(f"Cannot open video: {video_path}")
 
     os.makedirs(out_dir, exist_ok=True)
+
     fps = cap.get(cv2.CAP_PROP_FPS)
     if fps <= 0:
-        raise RuntimeError(f"Cannot determine FPS for video: {video_path}")
+        fps = 25.0  # fallback
 
-    frame_interval = int(round(fps * every_ms / 1000.0))
-    if frame_interval <= 0:
+    frame_interval = int(fps * every_ms / 1000.0)
+    if frame_interval < 1:
         frame_interval = 1
 
-    frame_idx, saved = 0, 0
+    frame_idx = 0
+    saved = 0
     while True:
         ret, frame = cap.read()
         if not ret:
             break
+
         if frame_idx % frame_interval == 0:
-            out_path = os.path.join(out_dir, f"frame_{frame_idx:06d}.jpg")
-            cv2.imwrite(out_path, frame)
+            ts_ms = int((frame_idx / fps) * 1000)
+            out_file = Path(out_dir) / f"frame_{ts_ms:09d}.jpg"
+            cv2.imwrite(str(out_file), frame)
             saved += 1
+
         frame_idx += 1
 
     cap.release()
@@ -43,18 +65,18 @@ def extract_frames(video_path: str, out_dir: str, every_ms: int = 1000) -> int:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Video recognition pipeline")
-    ap.add_argument("--input", required=True, help="Input video file")
-    ap.add_argument("--out", required=True, help="Output directory for frames")
-    ap.add_argument("--every_ms", type=int, default=1000,
-                    help="Interval in milliseconds between frames (default=1000)")
+    logger.info('starting video_recognition.py')
+    ap = argparse.ArgumentParser(description="Video recognition / frame extractor")
+    ap.add_argument("--input", required=True, help="Path to input video")
+    ap.add_argument("--out", required=True, help="Directory to save frames")
+    ap.add_argument("--every_ms", type=int, default=1000, help="Extract frame every N milliseconds")
     args = ap.parse_args()
 
-    try:
-        saved = extract_frames(args.input, args.out, args.every_ms)
-        print(f"✅ Saved {saved} frames into {args.out}")
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    start = time.time()
+    saved = extract_frames(args.input, args.out, args.every_ms)
+    elapsed = time.time() - start
+
+    print(f"✅ Extracted {saved} frames into {args.out} in {elapsed:.2f}s")
 
 
 if __name__ == "__main__":
