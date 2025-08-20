@@ -1,3 +1,16 @@
+
+## Why This Repository?
+
+This repository exists to provide a practical, extensible framework for collecting, validating, and managing data at the edge for AI and IoT applications. In modern industrial and enterprise environments, data must be gathered reliably from sensors and systems, validated against schemas, and prepared for downstream use in analytics, training, and decision-making pipelines.
+
+By maintaining structured, schema-validated JSONL samples and tools, this project helps ensure that:
+- Edge devices can integrate smoothly with centralized AI/ML workflows
+- Data pipelines remain consistent and machine-readable
+- Developers can easily extend support for new sensor types and environments
+- Enterprises can maintain auditability and compliance for sensitive workloads
+- **On-chain anchoring of data (Bitcoin)** is supported for enterprise-grade trust, tamper-evidence, and regulatory assurance
+
+
 # Edge AI Data Collection (Enhanced)
 
 Fast, secure, and auditable data collection for edge devices with **tiered storage**:
