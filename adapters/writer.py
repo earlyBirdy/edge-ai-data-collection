@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 try:
     from common.logger import get_logger
 except Exception:
-import os
-import sys
+    import os
+    import sys
     sys.path.append(os.getcwd())
     from common.logger import get_logger  # type: ignore
 
