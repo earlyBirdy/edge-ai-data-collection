@@ -1,34 +1,47 @@
-
 # Why This Repository?
 
 This repository exists to provide a practical, extensible framework for collecting, validating, and managing data at the edge for AI and IoT applications. In modern industrial and enterprise environments, data must be gathered reliably from sensors and systems, validated against schemas, and prepared for downstream use in analytics, training, and decision-making pipelines.
 
 By maintaining structured, schema-validated JSONL samples and tools, this project helps ensure that:
-- Edge devices can integrate smoothly with centralized AI/ML workflows
-- Data pipelines remain consistent and machine-readable
-- Developers can easily extend support for new sensor types and environments
-- Enterprises can maintain auditability and compliance for sensitive workloads
-- **On-chain anchoring of data (Bitcoin)** is supported for enterprise-grade trust, tamper-evidence, and regulatory assurance
+- Edge devices can integrate smoothly with centralized AI/ML workflows  
+- Data pipelines remain consistent and machine-readable  
+- Developers can easily extend support for new sensor types and environments  
+- Enterprises can maintain auditability and compliance for sensitive workloads  
+- **On-chain anchoring of data (Bitcoin)** is supported for enterprise-grade trust:
+  - **Visibility**: auditable proofs that data existed at a certain point in time  
+  - **Traceability**: linkage from edge samples → manifests → anchored Merkle roots  
+  - **Immutability**: tamper-evidence and regulatory assurance via Bitcoin mainnet/testnet  
 
+---
 
-# Edge AI Data Collection (Enhanced) and Supported Protocol Adapters
+## Supported Protocol Adapters
+The repository currently supports ingestion from multiple **industrial protocols and data sources**:
 
-Fast, secure, and auditable data collection for edge devices with **tiered storage**:
-- **Hot**: JSONL / Protobuf framed logs for ultra-fast append and tailing
-- **Warm/Batch**: Parquet (+ zstd) for analytics and ML features
-- **Governed**: JSON Schema / Avro contracts, signed manifests, and lineage-friendly layout
+- **Binary / Legacy Protocols**
+  - CAN (Controller Area Network)
+  - Modbus
+  - PCAP (packet captures)
+  - Syslog
 
-> This package adds sample files, schemas, and scaffolding (Docker, CI) to help you run and extend the repo quickly.
+- **Industrial / Enterprise Systems**
+  - OPC UA
+  - ERP (Odoo adapter)
+  - SCADA systems (via adapters)
 
-This repository now includes **binary/legacy protocol** and **enterprise** adapters, all emitting JSONL for downstream validation and Parquet conversion:
+- **General Adapters**
+  - File-based JSON/JSONL writer
 
-- **CAN bus** (`python-can`) → `adapters/can_reader.py`
-- **Modbus TCP** (`pymodbus`) → `adapters/modbus_reader.py`
-- **PCAP** live capture (`scapy`) → `adapters/pcap_reader.py`
-- **Syslog** UDP listener (stdlib) → `adapters/syslog_listener.py`
-- **OPC UA** (`asyncua`) → `adapters/opcua_reader.py` (SCADA-compatible)
-- **ERP – Odoo** via XML-RPC (stdlib) → `adapters/erp_odoo_reader.py`
+## Supported Data & Log Formats
+The framework currently supports structured and semi-structured data formats commonly used in industry:
+- **JSON / JSONL** (structured event and log records)  
+- **Binary frames** from CAN, Modbus, PCAP  
+- **Syslog text records**  
+- **ERP/SCADA structured outputs**  
+- **Video frames** extracted from media files  
 
+Coverage: estimated **70–80%** of data and log formats typically encountered across manufacturing, energy, transportation, and enterprise environments.
+
+---
 
 ## Supported data & log formats
 
@@ -38,44 +51,83 @@ This repository now includes **binary/legacy protocol** and **enterprise** adapt
 | Hot streams (binary) | **Protobuf** (`*.pbr`) | High-rate sensor readings (compact, schema’d) |
 | Batch analytics | **Parquet** (`*.parquet`, zstd) | Columnar storage for queries and features |
 | Governance | **JSON Schema / Avro** (`*.schema.json` / `*.avsc`) | Data contracts & validation |
-| Ops logs | **LOG** (`*.log`) | Process/ingestion logs |
-| Media (optional) | **JPEG/PNG, MP4** | Vision/audio artifacts with sidecar JSON |
+| Ops logs | **LOG** (`*.log`) | Centralized process/ingestion logs (rotating) |
+| Media | **JPEG/PNG, MP4** | Vision/audio artifacts with sidecar JSON |
+| Legacy capture | **PCAP** | Network packet-level logs |
+| Fieldbus | **CAN, Modbus** | Industrial machine telemetry |
+| System | **Syslog** | Infrastructure/system events |
 
+---
 
-## Paths & partitioning
+## Supported Example Machines
+
+This repository is designed to work with a wide range of **industrial edge computing devices** that collect, validate, and stream sensor data.  
+While the code is hardware-agnostic, the following classes of machines are good candidates:
+
+### 1. Industrial PCs (IPC) & Rugged Edge Computers
+- **Vendors**: Sintrones, Advantech, Aaeon, OnLogic, Vecow  
+- **Use cases**: factory automation, AI inference, SCADA/PLC integration  
+- **I/O support**: Ethernet, RS-232/485, CAN bus, GPIO, USB  
+
+### 2. Embedded ARM / SoC Boards
+- **Examples**: NVIDIA Jetson (Nano, Xavier, Orin), Raspberry Pi 5, BeagleBone, Orange Pi  
+- **Use cases**: AI/ML inference, temperature/vibration data logging, low-power deployments  
+- **I/O support**: CSI camera, SPI/I²C, GPIO, Wi-Fi/BT, LTE modules  
+
+### 3. Gateways & Protocol Bridges
+- **Examples**: Moxa UC series, HMS Anybus, Siemens IoT2040  
+- **Use cases**: protocol translation (OPC UA, Modbus, MQTT, EtherCAT), legacy machine integration  
+- **I/O support**: Fieldbus, serial, Ethernet  
+
+### 4. Specialized AI Accelerators
+- **Examples**: Intel NUC + Movidius Myriad, Google Coral Dev Board, FPGA edge cards  
+- **Use cases**: defect detection, predictive maintenance, real-time inference  
+
+---
+
+## 📜 Logging & Traceability
+All adapters and pipelines in this repository use a **central logging utility** located at:
 
 ```
-data/
-  samples/
-    hot/temperature/2025-08-19/temperature-2025-08-19T11-00.jsonl
-    hot/ops/ingestion-2025-08-19.log
-    batch/site=A/device=D/topic=temperature/date=2025-08-19/hour=11/part-000.parquet
-  manifests/
-    site=A/device=D/topic=temperature/date=2025-08-19/hour=11/MANIFEST.json
-schema/
-  temperature.schema.json
-  temperature.avsc
-adapters/
-  opcua/README.md
-  odoo/README.md
-  sap/README.md
-decision_engine/
-  README.md
-  engine.py (interface placeholder)
+common/logger.py
 ```
 
-**Partitioning (batch):** `site=<id>/device=<id>/topic=<name>/date=YYYY-MM-DD/hour=HH/part-*.parquet`
+### Features
+- Logs to **console** (for real-time monitoring).  
+- Logs to **rotating log files** under `./data/logs/` (traceable history).  
+- Default rotation: **5 MB per file**, up to **5 backups**.  
+- Environment variable `EDGE_AI_LOG_DIR` can override the log storage location.
 
+### Log Locations
+- Default:  
+  ```
+  ./data/logs/<adapter_or_pipeline>.log
+  ```
+- Example:  
+  - `./data/logs/can_reader.log`  
+  - `./data/logs/video_recognition.log`  
 
-## Minimal conventions
+### Example Output
+```
+2025-08-20 12:41:05 [INFO] can_reader: Listening on CAN interface can0
+2025-08-20 12:41:07 [ERROR] opcua_reader: Connection timeout
+2025-08-20 12:41:10 [DEBUG] video_recognition: Extracted frame #25
+```
+
+📦 **Impact**: This makes all data collection and vision pipelines **fully traceable** for audits, debugging, and enterprise integration.
+
+---
+
+## Minimal Conventions
 - **Compression**: zstd across Parquet; gzip/zstd on rotated JSONL (`*.jsonl.zst`)
 - **Timestamps**: UTC, ISO-8601 in JSONL; INT64 in Parquet with TZ meta
 - **Schemas**: keep `schema_fingerprint` (SHA-256) in file metadata/headers
 - **Manifests**: per partition directory with per-file SHA-256 + Merkle root
 - **Rotation**: JSONL every 100 MB or 15 min; Parquet target 128–512 MB files
 
+---
 
-## Quick start
+## Quickstart
 
 ```bash
 # Modbus (reads holding registers)
@@ -95,6 +147,9 @@ python tools/run_adapter.py opcua --endpoint opc.tcp://localhost:4840   --nodes 
 
 # ERP (Odoo)
 python tools/run_adapter.py erp_odoo --url http://odoo.local:8069 --db mydb   --user admin --password secret   --model res.partner --domain "[]" --fields '["name","create_date"]' --limit 10   --output data/samples/erp/partners.jsonl
+
+# Run the video recognition pipeline:
+python -m vision.pipelines.video_recognition --input ./data/media/video/sample.mp4 --out ./data/samples/hot/vision --every_ms 500
 ```
 
 > Install optional dependencies as needed:
@@ -128,15 +183,12 @@ python tools/validate_jsonl.py --schema ./schema/temperature.schema.json --input
 **Avro (optional)**: use `fastavro` for round-trip tests.
 
 ## Decision engine interface
-
 See `decision_engine/engine.py` for the interface. You can drop in rule packs and model runners (ONNX/TensorRT).
 
 ## CI
-
 `.github/workflows/ci.yml` runs lint, type checks, and smoke tests; customize as needed.
 
 ---
-
 
 ### Jupyter Lab (zero-setup via Docker)
 
@@ -239,37 +291,6 @@ python tools/verify_anchor.py \
 
 The OP_RETURN payload is `EAD1` + the 32-byte `merkle_root` from the manifest.
 
-
-## Supported Example Machines
-
-This repository is designed to work with a wide range of **industrial edge computing devices** that collect, validate, and stream sensor data.  
-While the code is hardware-agnostic, the following classes of machines are good candidates for deployment:
-
-### 1. Industrial PCs (IPC) & Rugged Edge Computers
-- **Vendors**: Sintrones, Advantech, Aaeon, OnLogic, Vecow  
-- **Use cases**: factory automation, AI inference at the edge, SCADA/PLC integration  
-- **I/O support**: Ethernet, RS-232/485, CAN bus, GPIO, USB  
-
-### 2. Embedded ARM / SoC Boards
-- **Examples**: NVIDIA Jetson (Nano, Xavier, Orin), Raspberry Pi 5, BeagleBone, Orange Pi  
-- **Use cases**: lightweight AI/ML inference, temperature/vibration data logging, low-power deployments  
-- **I/O support**: CSI camera, SPI/I²C, GPIO, Wi-Fi/BT, LTE modules  
-
-### 3. Gateways & Protocol Bridges
-- **Examples**: Moxa UC series, HMS Anybus gateways, Siemens IoT2040  
-- **Use cases**: protocol translation (OPC UA, Modbus, MQTT, EtherCAT), legacy machine integration  
-- **I/O support**: Fieldbus, serial, Ethernet  
-
-### 4. Specialized AI Accelerators
-- **Examples**: Intel NUC + Movidius Myriad, Google Coral Dev Board, FPGA edge cards  
-- **Use cases**: real-time AI workloads, defect detection, predictive maintenance  
-
----
-
-> ⚠️ **Note**:  
-This project assumes the target machine runs **Linux** (Ubuntu 20.04+ or Debian-based) with Python 3.9+.  
-Windows can be supported with minor path/glob adjustments.  
-
 ---
 
 ## How to Add Your Own Machine
@@ -281,5 +302,20 @@ To integrate a new machine type:
    python tools/validate_jsonl.py --schema ./schema/temperature.schema.json --input ./data/samples/hot/temperature/{date_str}/temperature-{date_str}T{hour_str}-00.jsonl
    ```
 4. (Optional) Extend `adapters/` with your device-specific protocol handler.
+
+---
+
+## Contributing
+Pull requests are welcome! Please run linting and tests before submitting:
+
+```bash
+ruff check .
+pytest
+```
+---
+
+> ⚠️ **Note**:  
+This project assumes the target machine runs **Linux** (Ubuntu 20.04+ or Debian-based) with Python 3.9+.  
+Windows can be supported with minor path/glob adjustments.  
 
 ---
