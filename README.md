@@ -197,7 +197,7 @@ This repository is designed to work with a wide range of **industrial edge compu
 While the code is hardware-agnostic, the following classes of machines are good candidates for deployment:
 
 ### 1. Industrial PCs (IPC) & Rugged Edge Computers
-- **Vendors**: Advantech, Aaeon, OnLogic, Sintrones, Vecow  
+- **Vendors**: Sintrones, Advantech, Aaeon, OnLogic, Vecow  
 - **Use cases**: factory automation, AI inference at the edge, SCADA/PLC integration  
 - **I/O support**: Ethernet, RS-232/485, CAN bus, GPIO, USB  
 
