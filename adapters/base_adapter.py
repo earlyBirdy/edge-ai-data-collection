@@ -18,7 +18,7 @@ def main():
     ap.add_argument("--config", help="Adapter-specific JSON config (inline or @path.json)")
     args = ap.parse_args()
 
-    cfg = {}
+    _cfg = {}
     if args.config:
         if args.config.startswith("@"):
             _cfg = json.loads(Path(args.config[1:]).read_text(encoding="utf-8"))
