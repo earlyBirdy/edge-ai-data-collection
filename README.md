@@ -1,5 +1,5 @@
 
-## Why This Repository?
+# Why This Repository?
 
 This repository exists to provide a practical, extensible framework for collecting, validating, and managing data at the edge for AI and IoT applications. In modern industrial and enterprise environments, data must be gathered reliably from sensors and systems, validated against schemas, and prepared for downstream use in analytics, training, and decision-making pipelines.
 
@@ -11,7 +11,7 @@ By maintaining structured, schema-validated JSONL samples and tools, this projec
 - **On-chain anchoring of data (Bitcoin)** is supported for enterprise-grade trust, tamper-evidence, and regulatory assurance
 
 
-# Edge AI Data Collection (Enhanced)
+# Edge AI Data Collection (Enhanced) and Supported Protocol Adapters
 
 Fast, secure, and auditable data collection for edge devices with **tiered storage**:
 - **Hot**: JSONL / Protobuf framed logs for ultra-fast append and tailing
@@ -19,6 +19,16 @@ Fast, secure, and auditable data collection for edge devices with **tiered stora
 - **Governed**: JSON Schema / Avro contracts, signed manifests, and lineage-friendly layout
 
 > This package adds sample files, schemas, and scaffolding (Docker, CI) to help you run and extend the repo quickly.
+
+This repository now includes **binary/legacy protocol** and **enterprise** adapters, all emitting JSONL for downstream validation and Parquet conversion:
+
+- **CAN bus** (`python-can`) → `adapters/can_reader.py`
+- **Modbus TCP** (`pymodbus`) → `adapters/modbus_reader.py`
+- **PCAP** live capture (`scapy`) → `adapters/pcap_reader.py`
+- **Syslog** UDP listener (stdlib) → `adapters/syslog_listener.py`
+- **OPC UA** (`asyncua`) → `adapters/opcua_reader.py` (SCADA-compatible)
+- **ERP – Odoo** via XML-RPC (stdlib) → `adapters/erp_odoo_reader.py`
+
 
 ## Supported data & log formats
 
@@ -30,6 +40,7 @@ Fast, secure, and auditable data collection for edge devices with **tiered stora
 | Governance | **JSON Schema / Avro** (`*.schema.json` / `*.avsc`) | Data contracts & validation |
 | Ops logs | **LOG** (`*.log`) | Process/ingestion logs |
 | Media (optional) | **JPEG/PNG, MP4** | Vision/audio artifacts with sidecar JSON |
+
 
 ## Paths & partitioning
 
@@ -55,6 +66,7 @@ decision_engine/
 
 **Partitioning (batch):** `site=<id>/device=<id>/topic=<name>/date=YYYY-MM-DD/hour=HH/part-*.parquet`
 
+
 ## Minimal conventions
 - **Compression**: zstd across Parquet; gzip/zstd on rotated JSONL (`*.jsonl.zst`)
 - **Timestamps**: UTC, ISO-8601 in JSONL; INT64 in Parquet with TZ meta
@@ -62,7 +74,36 @@ decision_engine/
 - **Manifests**: per partition directory with per-file SHA-256 + Merkle root
 - **Rotation**: JSONL every 100 MB or 15 min; Parquet target 128–512 MB files
 
+
 ## Quick start
+
+```bash
+# Modbus (reads holding registers)
+python tools/run_adapter.py modbus --host 192.168.1.10 --unit 1 --address 0 --count 10   --output data/samples/modbus/latest.jsonl
+
+# CAN (Linux SocketCAN)
+python tools/run_adapter.py can --channel can0 --bustype socketcan --bitrate 500000   --output data/samples/can/capture.jsonl
+
+# PCAP (capture 100 HTTP packets)
+python tools/run_adapter.py pcap --iface eth0 --filter "tcp port 80" --count 100   --output data/samples/pcap/http.jsonl
+
+# Syslog listener (UDP 5140)
+python tools/run_adapter.py syslog --host 0.0.0.0 --port 5140   --output data/samples/syslog/events.jsonl
+
+# OPC UA
+python tools/run_adapter.py opcua --endpoint opc.tcp://localhost:4840   --nodes ns=2;i=2 ns=2;i=3   --output data/samples/opcua/readings.jsonl
+
+# ERP (Odoo)
+python tools/run_adapter.py erp_odoo --url http://odoo.local:8069 --db mydb   --user admin --password secret   --model res.partner --domain "[]" --fields '["name","create_date"]' --limit 10   --output data/samples/erp/partners.jsonl
+```
+
+> Install optional dependencies as needed:
+>
+> ```bash
+> pip install -r requirements-optional.txt
+> # or selectively:
+> pip install python-can pymodbus scapy asyncua
+> ```
 
 ### Docker
 ```bash
@@ -96,8 +137,6 @@ See `decision_engine/engine.py` for the interface. You can drop in rule packs an
 
 ---
 
-*Enhanced on 2025-08-19 04:19:01Z.*
-
 
 ### Jupyter Lab (zero-setup via Docker)
 
@@ -118,7 +157,6 @@ docker compose up jupyter
 > Jupyter starts without a token for local development. For remote servers, set a token/password.
 
 
-
 ## Vision (Image & Video Recognition)
 
 Run lightweight recognition that writes JSONL detections and optional annotated frames.
@@ -134,7 +172,6 @@ python -m vision.pipelines.video_recognition --input ./data/media/video/sample.m
 ```
 
 
-
 ### Annotated Frames
 
 When running vision pipelines, annotated frames (with drawn boxes & labels) are saved under:
@@ -146,7 +183,6 @@ data/samples/hot/vision/frames/
 Each image or sampled video frame gets a `*-annot.png` showing detected objects with bounding boxes and confidence scores.
 
 Useful for **smart factory data analysis** where visual confirmation of detections is important.
-
 
 
 ### Vision frame annotations
