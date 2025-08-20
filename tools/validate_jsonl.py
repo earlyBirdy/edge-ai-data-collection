@@ -16,11 +16,11 @@ except Exception:
 
 
 def fill_templates(s: str) -> str:
-    \"\"\"Fill {date_str} and {hour_str} placeholders from env or current UTC.\"\"\"
+    """Fill {date_str} and {hour_str} placeholders from env or current UTC."""
     now = datetime.now(timezone.utc)
     date_str = os.environ.get("DATE_STR", now.strftime("%Y-%m-%d"))
     hour_str = os.environ.get("HOUR_STR", now.strftime("%H"))
-    # Support both .format(...) style and literal replacement
+    # Support both str.format and literal replacement
     try:
         return s.format(date_str=date_str, hour_str=hour_str)
     except Exception:
@@ -28,23 +28,19 @@ def fill_templates(s: str) -> str:
 
 
 def broaden_to_date_glob(filled_pattern: str) -> str:
-    \"\"\"Broaden a specific hour file pattern to its date directory, e.g. temperature-*.jsonl\"\"\"
+    """Broaden a specific hour file pattern to its date directory, e.g. temperature-*.jsonl"""
     p = Path(filled_pattern)
     parent = p.parent
-    # If filename looks like temperature-YYYY-MM-DDTHH-00.jsonl, keep prefix and wildcard the hour
-    stem = p.stem
+    stem = p.stem  # e.g. temperature-2025-08-19T04-00
     if "T" in stem:
         prefix = stem.split("T")[0]  # temperature-YYYY-MM-DD
         return str(parent / f"{prefix}T*.jsonl")
-    # Fallback to any temperature-*.jsonl in the same dir
     return str(parent / "temperature-*.jsonl")
 
 
 def widen_to_all_dates_glob(filled_pattern: str) -> str:
-    \"\"\"Broaden search across all date partitions: */temperature-*.jsonl two dirs up.\"\"\"
+    """Broaden search across all date partitions: */temperature-*.jsonl two dirs up."""
     p = Path(filled_pattern)
-    # Assume pattern like .../temperature/YYYY-MM-DD/temperature-*.jsonl
-    # We go up to .../temperature/*/temperature-*.jsonl
     try:
         return str(p.parent.parent / "*/temperature-*.jsonl")
     except Exception:
@@ -52,7 +48,7 @@ def widen_to_all_dates_glob(filled_pattern: str) -> str:
 
 
 def find_latest(files):
-    \"\"\"Return a single most-recently modified file from a list.\"\"\"
+    """Return a single most-recently modified file from a list."""
     files = [str(f) for f in files]
     if not files:
         return None
@@ -72,7 +68,7 @@ def is_iso8601(s: str) -> bool:
 
 
 def validate_one_object(obj, schema):
-    \"\"\"Lightweight checks if jsonschema isn't available.\"\"\"
+    """Lightweight checks if jsonschema isn't available."""
     errors = []
 
     required = set(schema.get("required", []))
@@ -94,11 +90,9 @@ def validate_one_object(obj, schema):
             errors.append(f"{key} must be number")
         elif t == "integer" and not isinstance(v, int):
             errors.append(f"{key} must be integer")
-
         if spec.get("format") == "date-time":
             if not isinstance(v, str) or not is_iso8601(v):
                 errors.append(f"{key} must be ISO8601 date-time")
-
         if "enum" in spec and v not in spec["enum"]:
             errors.append(f"{key} must be one of {spec['enum']}")
     return errors
@@ -126,27 +120,27 @@ def validate_file(schema, path):
 
 
 def collect_files(pattern: str, strict: bool):
-    \"\"\"Resolve files; auto-fallback to latest if strict=False.\"\"\"
+    """Resolve files; auto-fallback to latest if strict=False."""
     # Exact/glob first
     files = glob.glob(pattern)
     if files:
         return sorted(set(files))
 
     # Broaden within same date dir
-    broadened = broaden_to_date_glob(pattern)
-    files = glob.glob(broadened)
+    date_glob = broaden_to_date_glob(pattern)
+    files = glob.glob(date_glob)
     if files:
         return sorted(set(files))
 
     if strict:
         return []
 
-    # Auto-fallback: pick latest within same date dir
+    # Auto-fallback: latest within same date dir
     latest = find_latest(files)
     if latest:
         return [latest]
 
-    # If still none, widen to all dates and pick latest
+    # Still none: widen to all dates and pick latest
     all_dates = glob.glob(widen_to_all_dates_glob(pattern))
     latest = find_latest(all_dates)
     return [latest] if latest else []
@@ -174,8 +168,7 @@ def main():
 
     all_errs = []
     for fp in files:
-        errs = validate_file(schema, fp)
-        all_errs.extend(errs)
+        all_errs.extend(validate_file(schema, fp))
 
     if all_errs:
         for e in all_errs:
