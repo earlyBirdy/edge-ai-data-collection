@@ -1,4 +1,6 @@
-import argparse, sys, asyncio, json
+import argparse
+import sys
+import asyncio
 from datetime import datetime, timezone
 try:
     from asyncua import Client  # opcua async client

@@ -1,4 +1,6 @@
-import argparse, sys, json
+import argparse
+import sys
+import json
 from datetime import datetime, timezone
 try:
     import xmlrpc.client as xmlrpclib
@@ -21,7 +23,7 @@ def main():
     ap.add_argument("--password", required=True)
     ap.add_argument("--model", default="res.partner")
     ap.add_argument("--domain", default="[]")
-    ap.add_argument("--fields", default="["name","create_date"]")
+    ap.add_argument("--fields", default='["name","create_date"]')
     ap.add_argument("--limit", type=int, default=10)
     ap.add_argument("--output", required=True)
     args = ap.parse_args()

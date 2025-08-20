@@ -1,5 +1,5 @@
-import argparse, sys, json
-from pathlib import Path
+import argparse
+import sys
 from datetime import datetime, timezone
 try:
     from pymodbus.client import ModbusTcpClient  # pymodbus>=3

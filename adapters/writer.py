@@ -1,5 +1,6 @@
 from pathlib import Path
-import json, time
+import json
+import time
 from datetime import datetime, timezone
 
 def write_jsonl(output_path, records_iter):

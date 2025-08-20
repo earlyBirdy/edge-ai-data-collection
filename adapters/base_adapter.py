@@ -1,4 +1,6 @@
-import argparse, sys, json
+import argparse
+import sys
+import json
 from pathlib import Path
 from datetime import datetime, timezone
 try:
@@ -19,9 +21,9 @@ def main():
     cfg = {}
     if args.config:
         if args.config.startswith("@"):
-            cfg = json.loads(Path(args.config[1:]).read_text(encoding="utf-8"))
+            _cfg = json.loads(Path(args.config[1:]).read_text(encoding="utf-8"))
         else:
-            cfg = json.loads(args.config)
+            _cfg = json.loads(args.config)
 
     def gen():
         # placeholder generator; overridden in specific adapters

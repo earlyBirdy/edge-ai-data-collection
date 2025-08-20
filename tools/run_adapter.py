@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import argparse, subprocess, sys
-from pathlib import Path
+import argparse
+import subprocess
+import sys
 
 ADAPTERS = {
     "can": "adapters/can_reader.py",

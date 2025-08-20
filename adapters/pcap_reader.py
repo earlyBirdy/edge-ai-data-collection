@@ -1,8 +1,8 @@
-import argparse, sys, json
-from pathlib import Path
+import argparse
+import sys
 from datetime import datetime, timezone
 try:
-    from scapy.all import sniff, Raw  # scapy
+    from scapy.all import sniff  # scapy
     HAS_SCAPY = True
 except Exception:
     HAS_SCAPY = False
