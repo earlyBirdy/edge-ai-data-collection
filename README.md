@@ -100,7 +100,7 @@ python tools/run_adapter.py erp_odoo --url http://odoo.local:8069 --db mydb   --
 > Install optional dependencies as needed:
 >
 > ```bash
-> pip install -r requirements-optional.txt
+> pip install -r requirements.txt
 > # or selectively:
 > pip install python-can pymodbus scapy asyncua
 > ```
